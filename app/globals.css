@@ -1,0 +1,146 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  /* Light theme - Off-white with Manchi accents */
+  --background: #f7f2ec;
+  --foreground: #1a1a1a;
+  --card: #ffffff;
+  --card-foreground: #1a1a1a;
+  --popover: #ffffff;
+  --popover-foreground: #1a1a1a;
+  --primary: #c7432e; /* brand red */
+  --primary-foreground: #ffffff;
+  --secondary: #f0ebe6;
+  --secondary-foreground: #4f4545;
+  --muted: #ebe5df;
+  --muted-foreground: #737373;
+  --accent: #f0cd74;
+  --accent-foreground: #4f4545;
+  --destructive: #b3261e;
+  --destructive-foreground: #ffffff;
+  --border: #e5e0da;
+  --input: #e5e0da;
+  --ring: #c7432e;
+  --chart-1: #c7432e;
+  --chart-2: #f0cd74;
+  --chart-3: #8b9855;
+  --chart-4: #4f4545;
+  --chart-5: #f0d1af;
+  --radius: 0.875rem;
+  --sidebar: #f7f2ec;
+  --sidebar-foreground: #1a1a1a;
+  --sidebar-primary: #c7432e;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #ebe5df;
+  --sidebar-accent-foreground: #4f4545;
+  --sidebar-border: #e5e0da;
+  --sidebar-ring: #c7432e;
+  --footer-bg: #1a1a1a;
+  --footer-foreground: #f5f5f5;
+}
+
+.dark {
+  /* Dark theme - keep main black/white, reuse accents */
+  --background: #050505;
+  --foreground: #f7f2ec;
+  --card: #121212;
+  --card-foreground: #f7f2ec;
+  --popover: #121212;
+  --popover-foreground: #f7f2ec;
+  --primary: #f0cd74;
+  --primary-foreground: #2a2222;
+  --secondary: #4f4545;
+  --secondary-foreground: #f7f2ec;
+  --muted: #181818;
+  --muted-foreground: #cbb9b0;
+  --accent: #8b9855;
+  --accent-foreground: #f7f2ec;
+  --destructive: #f97171;
+  --destructive-foreground: #2a2222;
+  --border: #262626;
+  --input: #262626;
+  --ring: #f0cd74;
+  --chart-1: #f0cd74;
+  --chart-2: #c7432e;
+  --chart-3: #8b9855;
+  --chart-4: #f0d1af;
+  --chart-5: #4f4545;
+  --sidebar: #121212;
+  --sidebar-foreground: #f7f2ec;
+  --sidebar-primary: #f0cd74;
+  --sidebar-primary-foreground: #2a2222;
+  --sidebar-accent: #181818;
+  --sidebar-accent-foreground: #f7f2ec;
+  --sidebar-border: #262626;
+  --sidebar-ring: #f0cd74;
+  --footer-bg: #050505;
+  --footer-foreground: #f0d1af;
+}
+
+@theme inline {
+  --font-sans: 'Montserrat', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-footer-bg: var(--footer-bg);
+  --color-footer-foreground: var(--footer-foreground);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+@layer utilities {
+  .no-scrollbar {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .legal-prose h2 {
+    scroll-margin-top: 5rem;
+  }
+}
