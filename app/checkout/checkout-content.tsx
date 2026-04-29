@@ -7,7 +7,6 @@ import {
   MapPin,
   Phone,
   Mail,
-  CreditCard,
   Clock,
   ChevronRight,
   Edit2,
@@ -361,13 +360,13 @@ export function CheckoutContent({
         {/* Payment Method */}
         <section className="rounded-2xl border border-border bg-card p-6">
           <h2 className="text-lg font-semibold text-foreground flex items-center gap-2 mb-4">
-            <CreditCard className="h-5 w-5 text-primary" />
+            <img src="/logos/paystack-icon.svg" alt="Paystack" className="h-5 w-5 rounded-sm" />
             Payment Method
           </h2>
 
           <div className="flex items-center gap-3 rounded-xl border border-primary bg-primary/5 p-4">
-            <div className="h-10 w-16 rounded bg-blue-600 flex items-center justify-center">
-              <span className="text-white text-xs font-bold">PAYSTACK</span>
+            <div className="h-10 w-10 rounded-md bg-white border border-border/60 flex items-center justify-center overflow-hidden p-1">
+              <img src="/logos/paystack-icon.svg" alt="Paystack" className="h-full w-full object-contain" />
             </div>
             <div className="flex-1">
               <p className="font-medium text-foreground">Pay with Paystack</p>
@@ -431,7 +430,7 @@ export function CheckoutContent({
             </div>
             {!isPickup && (
               <div className="flex justify-between text-muted-foreground">
-                <span>Transport fee</span>
+                <span>Delivery fee</span>
                 <span>₦{formatPrice(deliveryFee)}</span>
               </div>
             )}

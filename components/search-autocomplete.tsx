@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef, useCallback } from "react"
+import { useState, useEffect, useRef, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { Search, X, Loader2 } from "lucide-react"
@@ -38,19 +38,35 @@ export function SearchAutocomplete({
   const dropdownRef = useRef<HTMLDivElement>(null)
   const router = useRouter()
 
-  const results = query.trim().length >= 2
-    ? foods
-        .filter(
-          (food) =>
-            effectiveFoodMenuUiStatus(food, applyBranchAvailability, storeLocation, foodAvailabilityMaps) !==
-            "hidden"
-        )
-        .filter((food) =>
+  const results = useMemo(() => {
+    if (query.trim().length < 2) return []
+
+    const filtered = foods
+      .map((food, index) => ({ food, index }))
+      .filter(
+        ({ food }) =>
+          effectiveFoodMenuUiStatus(food, applyBranchAvailability, storeLocation, foodAvailabilityMaps) !==
+          "hidden"
+      )
+      .filter(
+        ({ food }) =>
           food.name.toLowerCase().includes(query.toLowerCase()) ||
           food.description?.toLowerCase().includes(query.toLowerCase())
-        )
-        .slice(0, 6)
-    : []
+      )
+
+    filtered.sort((a, b) => {
+      const aOutOfStock =
+        effectiveFoodMenuUiStatus(a.food, applyBranchAvailability, storeLocation, foodAvailabilityMaps) ===
+        "out_of_stock"
+      const bOutOfStock =
+        effectiveFoodMenuUiStatus(b.food, applyBranchAvailability, storeLocation, foodAvailabilityMaps) ===
+        "out_of_stock"
+      if (aOutOfStock === bOutOfStock) return a.index - b.index
+      return aOutOfStock ? 1 : -1
+    })
+
+    return filtered.map(({ food }) => food).slice(0, 6)
+  }, [foods, query, applyBranchAvailability, storeLocation, foodAvailabilityMaps])
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value

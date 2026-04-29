@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useMemo } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { MapPin, Bike, ChevronLeft, ChevronRight, ShoppingBag, Plus, Minus, Trash2 } from "lucide-react"
@@ -21,14 +21,29 @@ export function HeroBanner({ foods = [] }: HeroBannerProps) {
   const { storeLocation } = useCart()
   const { foods: foodAvailabilityMaps } = useAvailability()
   const { applyBranchAvailability } = useBranchAvailability()
-  // Get featured foods (ones with images, max 5) — respect branch availability
-  const featuredFoods = foods
-    .filter((f) => f.image_url)
-    .filter(
-      (f) =>
-        effectiveFoodMenuUiStatus(f, applyBranchAvailability, storeLocation, foodAvailabilityMaps) !== "hidden"
-    )
-    .slice(0, 5)
+  // Get featured foods (ones with images, max 5) — keep available dishes first.
+  const featuredFoods = useMemo(() => {
+    const filtered = foods
+      .map((food, index) => ({ food, index }))
+      .filter(({ food }) => Boolean(food.image_url))
+      .filter(
+        ({ food }) =>
+          effectiveFoodMenuUiStatus(food, applyBranchAvailability, storeLocation, foodAvailabilityMaps) !== "hidden"
+      )
+
+    filtered.sort((a, b) => {
+      const aOutOfStock =
+        effectiveFoodMenuUiStatus(a.food, applyBranchAvailability, storeLocation, foodAvailabilityMaps) ===
+        "out_of_stock"
+      const bOutOfStock =
+        effectiveFoodMenuUiStatus(b.food, applyBranchAvailability, storeLocation, foodAvailabilityMaps) ===
+        "out_of_stock"
+      if (aOutOfStock === bOutOfStock) return a.index - b.index
+      return aOutOfStock ? 1 : -1
+    })
+
+    return filtered.map(({ food }) => food).slice(0, 5)
+  }, [foods, applyBranchAvailability, storeLocation, foodAvailabilityMaps])
   const [currentIndex, setCurrentIndex] = useState(0)
   const [isHoveringCart, setIsHoveringCart] = useState(false)
 

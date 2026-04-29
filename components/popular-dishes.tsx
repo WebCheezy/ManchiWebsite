@@ -23,14 +23,27 @@ export function PopularDishes({ foods, title = "Popular dishes", subtitle = "Cro
   const { cart, addToCart, updateQuantity, removeFromCart, storeLocation } = useCart()
   const { foods: foodAvailabilityMaps } = useAvailability()
   const { applyBranchAvailability } = useBranchAvailability()
-  const visible = useMemo(
-    () =>
-      foods.filter(
-        (f) =>
-          effectiveFoodMenuUiStatus(f, applyBranchAvailability, storeLocation, foodAvailabilityMaps) !== "hidden"
-      ),
-    [foods, applyBranchAvailability, storeLocation, foodAvailabilityMaps]
-  )
+  const visible = useMemo(() => {
+    const filtered = foods
+      .map((food, index) => ({ food, index }))
+      .filter(
+        ({ food }) =>
+          effectiveFoodMenuUiStatus(food, applyBranchAvailability, storeLocation, foodAvailabilityMaps) !== "hidden"
+      )
+
+    filtered.sort((a, b) => {
+      const aOutOfStock =
+        effectiveFoodMenuUiStatus(a.food, applyBranchAvailability, storeLocation, foodAvailabilityMaps) ===
+        "out_of_stock"
+      const bOutOfStock =
+        effectiveFoodMenuUiStatus(b.food, applyBranchAvailability, storeLocation, foodAvailabilityMaps) ===
+        "out_of_stock"
+      if (aOutOfStock === bOutOfStock) return a.index - b.index
+      return aOutOfStock ? 1 : -1
+    })
+
+    return filtered.map(({ food }) => food)
+  }, [foods, applyBranchAvailability, storeLocation, foodAvailabilityMaps])
 
   const getCartInfoForFood = (foodId: number) => {
     const cartItems = cart.items.filter((item) => item.foodId === foodId)

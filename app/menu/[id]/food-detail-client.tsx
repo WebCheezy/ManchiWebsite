@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useCallback, useMemo } from "react"
+import { useState, useCallback, useMemo, useEffect } from "react"
 import Link from "next/link"
 import { Plus, Minus, ShoppingCart, Check } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -18,6 +18,18 @@ interface FoodDetailClientProps {
     required: SideForFood[]
     optional: SideForFood[]
   }
+}
+
+function sameSelection(a: SelectedSide[], b: SelectedSide[]): boolean {
+  if (a.length !== b.length) return false
+  for (let i = 0; i < a.length; i += 1) {
+    const left = a[i]
+    const right = b[i]
+    if (!right) return false
+    if (left.side.id !== right.side.id) return false
+    if (left.quantity !== right.quantity) return false
+  }
+  return true
 }
 
 export function FoodDetailClient({ food, sides }: FoodDetailClientProps) {
@@ -44,7 +56,7 @@ export function FoodDetailClient({ food, sides }: FoodDetailClientProps) {
   const decrementQuantity = () => setQuantity((q) => Math.max(q - 1, 1))
 
   const handleSidesChange = useCallback((selection: SelectedSide[]) => {
-    setSelectedSides(selection)
+    setSelectedSides((prev) => (sameSelection(prev, selection) ? prev : selection))
   }, [])
 
   const requiredVisible = sides.required.filter((s) => getSideUiStatus(s.id) !== "hidden")
@@ -55,6 +67,14 @@ export function FoodDetailClient({ food, sides }: FoodDetailClientProps) {
   
   const sidesTotal = calculateSidesTotal(selectedSides)
   const itemTotal = (food.price + sidesTotal) * quantity
+
+  useEffect(() => {
+    // Defensive reset: if a dialog/sheet was left open during navigation,
+    // Radix can leave body pointer-events locked, making links appear broken.
+    if (document.body.style.pointerEvents === "none") {
+      document.body.style.pointerEvents = "auto"
+    }
+  }, [])
 
   const handleAddToCart = () => {
     if (!isRequiredSelected) {
