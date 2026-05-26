@@ -73,7 +73,7 @@ export function Footer() {
             </h3>
             <div className="flex flex-col gap-3">
               <a
-                href="#"
+                href="https://apps.apple.com/ng/app/manchi/id6762515362"
                 className="inline-flex items-center gap-3 bg-footer-foreground/10 hover:bg-footer-foreground/15 transition-colors rounded-lg px-4 py-2.5 w-full sm:w-fit max-w-xs"
               >
                 <svg className="h-7 w-7 shrink-0 text-footer-foreground" viewBox="0 0 24 24" fill="currentColor">
@@ -85,7 +85,7 @@ export function Footer() {
                 </div>
               </a>
               <a
-                href="#"
+                href="https://play.google.com/store/apps/details?id=com.webcheezy.manchi"
                 className="inline-flex items-center gap-3 bg-footer-foreground/10 hover:bg-footer-foreground/15 transition-colors rounded-lg px-4 py-2.5 w-full sm:w-fit max-w-xs"
               >
                 <svg className="h-7 w-7 shrink-0 text-footer-foreground" viewBox="0 0 24 24" fill="currentColor">
