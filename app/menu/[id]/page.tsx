@@ -105,7 +105,7 @@ export default async function FoodDetailPage({ params }: FoodDetailPageProps) {
               </span>
               <div className="flex items-center gap-1.5 text-muted-foreground">
                 <Clock className="h-4 w-4" />
-                <span className="text-sm">15-30 min delivery</span>
+                <span className="text-sm">30-45 min delivery</span>
               </div>
             </div>
 
