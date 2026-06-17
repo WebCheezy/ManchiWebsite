@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import type { Profile } from "@/lib/db/types"
-import { updateProfile, isPhoneMissing } from "@/lib/db/profiles"
+import { updateProfile, isPhoneMissing, getProfilePhone } from "@/lib/db/profiles"
 
 interface ProfileFormProps {
   profile: Profile | null
@@ -19,7 +19,7 @@ interface ProfileFormProps {
 export function ProfileForm({ profile, userId, email }: ProfileFormProps) {
   const router = useRouter()
   const [fullName, setFullName] = useState(profile?.full_name ?? "")
-  const [phone, setPhone] = useState(profile?.phone ?? profile?.phone_number ?? "")
+  const [phone, setPhone] = useState(getProfilePhone(profile) ?? "")
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
@@ -50,7 +50,7 @@ export function ProfileForm({ profile, userId, email }: ProfileFormProps) {
     try {
       const updated = await updateProfile(userId, {
         full_name: fullName || null,
-        phone: phone || null,
+        phone_number: phone || null,
       })
 
       if (!updated) {

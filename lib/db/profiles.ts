@@ -3,22 +3,25 @@ import type { Profile } from "./types"
 
 export interface ProfileInput {
   full_name?: string | null
-  phone?: string | null
+  phone_number?: string | null
   avatar_url?: string | null
+}
+
+/** Canonical phone from profile (mobile app uses phone_number). */
+export function getProfilePhone(profile: Profile | null): string | null {
+  if (!profile) return null
+  const value = profile.phone_number || profile.phone
+  return value?.trim() ? value.trim() : null
 }
 
 /** Check if profile is complete (has required fields like phone) */
 export function isProfileComplete(profile: Profile | null): boolean {
-  if (!profile) return false
-  const phone = profile.phone || profile.phone_number
-  return !!phone && phone.trim().length > 0
+  return !!getProfilePhone(profile)
 }
 
 /** Check if profile is missing phone number */
 export function isPhoneMissing(profile: Profile | null): boolean {
-  if (!profile) return true
-  const phone = profile.phone || profile.phone_number
-  return !phone || phone.trim().length === 0
+  return !getProfilePhone(profile)
 }
 
 /** Get a user's profile (client-side) */
@@ -43,7 +46,9 @@ export async function updateProfile(userId: string, input: ProfileInput): Promis
   const { data, error } = await supabase
     .from("profiles")
     .update({
-      ...input,
+      full_name: input.full_name ?? null,
+      phone_number: input.phone_number ?? null,
+      avatar_url: input.avatar_url ?? null,
       updated_at: new Date().toISOString(),
     })
     .eq("id", userId)
@@ -65,7 +70,7 @@ export async function createProfile(userId: string, input: ProfileInput): Promis
     .insert({
       id: userId,
       full_name: input.full_name || null,
-      phone: input.phone || null,
+      phone_number: input.phone_number || null,
       avatar_url: input.avatar_url || null,
     })
     .select()
@@ -86,7 +91,7 @@ export async function upsertProfile(userId: string, input: ProfileInput): Promis
     .upsert({
       id: userId,
       full_name: input.full_name || null,
-      phone: input.phone || null,
+      phone_number: input.phone_number || null,
       avatar_url: input.avatar_url || null,
       updated_at: new Date().toISOString(),
     })
