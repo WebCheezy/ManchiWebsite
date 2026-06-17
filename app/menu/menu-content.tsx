@@ -7,6 +7,7 @@ import { Search, Plus, Minus, X, ShoppingBag, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import type { Category, FoodWithCategory } from "@/lib/db/types"
 import { formatPrice } from "@/lib/format"
+import { getMenuPrice } from "@/lib/pricing"
 import { useCart } from "@/lib/cart/cart-context"
 import { useAvailability } from "@/lib/availability/availability-context"
 import { effectiveFoodMenuUiStatus } from "@/lib/availability/status"
@@ -72,10 +73,14 @@ export function MenuContent({
       "out_of_stock"
     )
       return
+    if (food.has_customization) {
+      router.push(`/menu/${food.id}`)
+      return
+    }
     addToCart({
       foodId: food.id,
       foodName: food.name,
-      foodPrice: food.price,
+      foodPrice: getMenuPrice(food),
       foodImage: food.image_url,
       quantity: 1,
       sides: [],
@@ -319,7 +324,7 @@ export function MenuContent({
                     )}
                     <div className="mt-3 flex items-center justify-between">
                       <span className="text-base sm:text-lg font-semibold text-foreground">
-                        &#8358;{formatPrice(food.price)}
+                        &#8358;{formatPrice(getMenuPrice(food))}
                       </span>
                       {outOfStock ? (
                         <span className="text-xs font-medium text-amber-700 dark:text-amber-400">Out of stock</span>

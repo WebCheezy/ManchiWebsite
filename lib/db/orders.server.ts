@@ -16,6 +16,7 @@ export type BackendCartItem = {
   name: string
   food_id: number | null
   options: unknown[]
+  selections?: Array<{ group_id: number | null; item_id: number; quantity: number }>
   side_id: number | null
   quantity: number
   image_url: string | null
@@ -51,6 +52,7 @@ export interface CreateOrderInput {
   location: StoreLocation | string
   items: OrderItemsPayload
   status: string
+  order_note?: string | null
 }
 
 export async function createOrder(input: CreateOrderInput): Promise<{ id: number } | null> {
@@ -66,6 +68,9 @@ export async function createOrder(input: CreateOrderInput): Promise<{ id: number
     delivery_lng: null,
     location: input.location,
     items: input.items as unknown as Record<string, unknown>,
+  }
+  if (input.order_note != null) {
+    row.order_note = input.order_note
   }
 
   const { data, error } = await supabase.from("orders").insert(row)

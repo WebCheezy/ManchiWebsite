@@ -11,6 +11,7 @@ import {
 } from "react"
 import type { Cart, CartItem, CartSideItem } from "@/lib/db/types"
 import type { DeliveryMethod, StoreLocation } from "@/lib/db/types"
+import { calculateCartItemTotal } from "@/lib/pricing"
 
 /** Exported so checkout success can clear storage in sync with context (avoids load-after-clear races). */
 export const CART_STORAGE_KEY = "manchi-cart"
@@ -61,11 +62,7 @@ function generateItemId(): string {
 }
 
 function calculateItemTotal(item: CartItem): number {
-  const sidesTotal = item.sides.reduce(
-    (sum, side) => sum + side.price * side.quantity,
-    0
-  )
-  return (item.foodPrice + sidesTotal) * item.quantity
+  return calculateCartItemTotal(item)
 }
 
 function calculateSubtotal(items: CartItem[]): number {

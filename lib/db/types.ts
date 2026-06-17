@@ -63,7 +63,10 @@ export interface Food {
   category_id: number | null
   name: string
   description: string | null
+  /** Base price — dish alone, no bundled options */
   price: number
+  /** Menu price stored in DB — base + included options */
+  display_price?: number | null
   image_url: string | null
   is_available: boolean
   created_at: string
@@ -76,7 +79,32 @@ export interface Side {
   price: number
   type: string | null
   image_url: string | null
+  option_group_id?: number | null
   created_at: string
+}
+
+/** Side within an option group, enriched with pricing deltas for UI */
+export interface OptionGroupSide {
+  id: number
+  name: string
+  price: number
+  price_delta: number
+  is_pricing_default: boolean
+  type: string | null
+  image_url: string | null
+  option_group_id?: number | null
+}
+
+export interface OptionGroup {
+  id: number
+  name: string
+  is_required: boolean
+  min_selections: number
+  max_selections: number
+  display_order: number
+  default_side_id: number | null
+  pricing_default_side_id: number | null
+  sides: OptionGroupSide[]
 }
 
 // ─── food_sides (junction) ──────────────────────────────────────────────────
@@ -147,6 +175,13 @@ export interface Transaction {
 /** Food with optional category name for listing pages */
 export interface FoodWithCategory extends Food {
   category?: { id: number; name: string } | null
+  /** Base price alias (same as price) */
+  base_price?: number
+  /** Computed or stored menu price for cards and customization header */
+  menu_price?: number
+  /** True when food has option groups — quick-add should go to detail page */
+  has_customization?: boolean
+  option_groups?: OptionGroup[]
 }
 
 /** Summary for header cart (e.g. count from session or pending order) */
@@ -187,9 +222,13 @@ export interface AddressInput {
 export interface CartSideItem {
   id: number
   name: string
+  /** Full side price at order time */
   price: number
+  /** Extra above menu price (0 when included in menu price) */
+  price_delta?: number
   quantity: number
   image_url: string | null
+  group_id?: number | null
 }
 
 /** A food item in the cart with selected sides */
@@ -197,6 +236,7 @@ export interface CartItem {
   id: string // Unique cart item ID (generated)
   foodId: number
   foodName: string
+  /** menu_price at add-to-cart time */
   foodPrice: number
   foodImage: string | null
   quantity: number

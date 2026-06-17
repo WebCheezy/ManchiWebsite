@@ -3,9 +3,11 @@
 import { useState, useEffect, useCallback, useMemo } from "react"
 import Link from "next/link"
 import Image from "next/image"
+import { useRouter } from "next/navigation"
 import { MapPin, Bike, ChevronLeft, ChevronRight, ShoppingBag, Plus, Minus, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import type { FoodWithCategory } from "@/lib/db/types"
+import { getMenuPrice } from "@/lib/pricing"
 import { useCart } from "@/lib/cart/cart-context"
 import { useAvailability } from "@/lib/availability/availability-context"
 import { effectiveFoodMenuUiStatus } from "@/lib/availability/status"
@@ -18,6 +20,7 @@ interface HeroBannerProps {
 }
 
 export function HeroBanner({ foods = [] }: HeroBannerProps) {
+  const router = useRouter()
   const { storeLocation } = useCart()
   const { foods: foodAvailabilityMaps } = useAvailability()
   const { applyBranchAvailability } = useBranchAvailability()
@@ -101,10 +104,14 @@ export function HeroBanner({ foods = [] }: HeroBannerProps) {
       "out_of_stock"
     )
       return
+    if (food.has_customization) {
+      router.push(`/menu/${food.id}`)
+      return
+    }
     addToCart({
       foodId: food.id,
       foodName: food.name,
-      foodPrice: food.price,
+      foodPrice: getMenuPrice(food),
       foodImage: food.image_url,
       quantity: 1,
       sides: [],
@@ -268,7 +275,7 @@ export function HeroBanner({ foods = [] }: HeroBannerProps) {
                           </p>
                         )}
                         <span className="block mt-2 text-xl font-bold text-primary">
-                          {formatPrice(currentFood.price)}
+                          {formatPrice(getMenuPrice(currentFood))}
                         </span>
                       </div>
                       {/* Order/Add Button */}

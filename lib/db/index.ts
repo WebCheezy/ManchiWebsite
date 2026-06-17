@@ -1,7 +1,7 @@
 export * from "./types"
 export * from "./client"
 export { getCategories } from "./categories"
-export { getFoods, getFoodById } from "./foods"
+export { getFoods, getFoodById, getFoodWithPricing } from "./foods"
 export {
   getSides,
   getSideById,

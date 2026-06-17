@@ -65,7 +65,7 @@ export async function getSidesForFood(foodId: number): Promise<SideForFood[]> {
   return data
     .filter((item) => item.side !== null)
     .map((item) => ({
-      ...(item.side as Side),
+      ...(item.side as unknown as Side),
       is_required: item.is_required,
     }))
 }

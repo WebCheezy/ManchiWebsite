@@ -304,16 +304,25 @@ function CartItemCard({ item, onUpdateQuantity, onRemove, getItemTotal }: CartIt
         {/* Sides */}
         {item.sides.length > 0 && (
           <div className="mt-2 flex flex-wrap gap-1.5">
-            {item.sides.map((side) => (
-              <span
-                key={side.id}
-                className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground"
-              >
-                {side.name}
-                {side.quantity > 1 && ` ×${side.quantity}`}
-                {side.price > 0 && ` (+₦${formatPrice(side.price * side.quantity)})`}
-              </span>
-            ))}
+            {item.sides.map((side) => {
+              const delta = side.price_delta
+              const extra =
+                delta !== undefined && delta > 0
+                  ? ` (+ ₦${formatPrice(delta * side.quantity)})`
+                  : delta === undefined && side.price > 0
+                    ? ` (+ ₦${formatPrice(side.price * side.quantity)})`
+                    : ""
+              return (
+                <span
+                  key={side.id}
+                  className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground"
+                >
+                  {side.name}
+                  {side.quantity > 1 && ` ×${side.quantity}`}
+                  {extra}
+                </span>
+              )
+            })}
           </div>
         )}
 

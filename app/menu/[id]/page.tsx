@@ -3,13 +3,13 @@ import Link from "next/link"
 import { ArrowLeft, Clock, Tag } from "lucide-react"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
-import { getFoodById, getFoods } from "@/lib/db/foods"
-import { getSidesForFoodGrouped } from "@/lib/db/sides"
+import { getFoodWithPricing, getFoods } from "@/lib/db/foods"
 import { getUser } from "@/lib/auth.server"
 import { getAddresses } from "@/lib/db/addresses.server"
 import { getProfileServer } from "@/lib/db/profiles.server"
 import { isPhoneMissing } from "@/lib/db/profiles"
 import { formatPrice } from "@/lib/format"
+import { getMenuPrice } from "@/lib/pricing"
 import { FoodDetailClient } from "./food-detail-client"
 
 const PLACEHOLDER_IMAGE = "https://images.unsplash.com/photo-1604329760661-e71dc83f8f26?w=800&h=600&fit=crop&q=80"
@@ -26,24 +26,24 @@ export default async function FoodDetailPage({ params }: FoodDetailPageProps) {
     notFound()
   }
 
-  const food = await getFoodById(foodId)
+  const food = await getFoodWithPricing(foodId)
 
   if (!food) {
     notFound()
   }
 
   const user = await getUser()
-  const [addresses, profile, relatedFoods, allFoods, sides] = await Promise.all([
+  const [addresses, profile, relatedFoods, allFoods] = await Promise.all([
     user ? getAddresses(user.id) : Promise.resolve([]),
     user ? getProfileServer(user.id) : Promise.resolve(null),
     food.category_id ? getFoods({ categoryId: food.category_id }) : Promise.resolve([]),
-    getFoods(), // All foods for header search autocomplete
-    getSidesForFoodGrouped(food.id), // Get sides for this food
+    getFoods(),
   ])
 
   const defaultAddress = addresses.find((a) => a.is_default) ?? addresses[0] ?? null
   const profileIncomplete = user ? isPhoneMissing(profile) : false
   const otherFoods = relatedFoods.filter((f) => f.id !== food.id).slice(0, 4)
+  const menuPrice = getMenuPrice(food)
 
   return (
     <div className="min-h-screen bg-background">
@@ -65,7 +65,6 @@ export default async function FoodDetailPage({ params }: FoodDetailPageProps) {
         </Link>
 
         <div className="grid lg:grid-cols-2 gap-8 lg:gap-12">
-          {/* Image */}
           <div className="relative aspect-[4/3] rounded-2xl overflow-hidden bg-muted">
             <img
               src={food.image_url || PLACEHOLDER_IMAGE}
@@ -82,7 +81,6 @@ export default async function FoodDetailPage({ params }: FoodDetailPageProps) {
             )}
           </div>
 
-          {/* Details */}
           <div className="flex flex-col">
             {food.category && (
               <div className="flex items-center gap-2 mb-3">
@@ -101,7 +99,7 @@ export default async function FoodDetailPage({ params }: FoodDetailPageProps) {
 
             <div className="mt-6 flex items-center gap-4">
               <span className="text-3xl font-bold text-foreground">
-                &#8358;{formatPrice(food.price)}
+                &#8358;{formatPrice(menuPrice)}
               </span>
               <div className="flex items-center gap-1.5 text-muted-foreground">
                 <Clock className="h-4 w-4" />
@@ -109,16 +107,13 @@ export default async function FoodDetailPage({ params }: FoodDetailPageProps) {
               </div>
             </div>
 
-            <FoodDetailClient food={food} sides={sides} />
+            <FoodDetailClient food={food} />
           </div>
         </div>
 
-        {/* Related Items */}
         {otherFoods.length > 0 && (
           <section className="mt-16">
-            <h2 className="text-xl font-semibold text-foreground mb-6">
-              You might also like
-            </h2>
+            <h2 className="text-xl font-semibold text-foreground mb-6">You might also like</h2>
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
               {otherFoods.map((item) => (
                 <Link
@@ -137,7 +132,7 @@ export default async function FoodDetailPage({ params }: FoodDetailPageProps) {
                   <div className="p-3">
                     <h3 className="font-medium text-foreground text-sm line-clamp-1">{item.name}</h3>
                     <p className="mt-1 text-sm font-semibold text-foreground">
-                      &#8358;{formatPrice(item.price)}
+                      &#8358;{formatPrice(getMenuPrice(item))}
                     </p>
                   </div>
                 </Link>

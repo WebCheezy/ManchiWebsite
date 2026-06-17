@@ -4,6 +4,7 @@ import { getAddressByIdForUser } from "@/lib/db/addresses.server"
 import { createOrder, type BackendCartItem } from "@/lib/db/orders.server"
 import { resolveTransportFeeNaira } from "@/lib/db/transport-prices.server"
 import type { CartItem, DeliveryMethod, StoreLocation } from "@/lib/db/types"
+import { calculateUnitTotal } from "@/lib/pricing"
 import { isServedRegion, servedRegionErrorMessage } from "@/lib/delivery/served-regions"
 import { nairaToKobo } from "@/lib/paystack.server"
 import { assertCartAvailableAtLocation } from "@/lib/db/availability.server"
@@ -12,8 +13,17 @@ const CHECKOUT_VAT_RATE = 0.075
 
 function mapCartItemToBackendCartItem(cartItem: CartItem): BackendCartItem {
   const sides = Array.isArray(cartItem.sides) ? cartItem.sides : []
-  const requiredSide = sides[0] ?? null
-  const optionalSides = sides.length > 1 ? sides.slice(1) : []
+  const unitTotal = calculateUnitTotal(cartItem.foodPrice, sides)
+
+  const selections = sides.map((s) => ({
+    group_id: s.group_id ?? null,
+    item_id: s.id,
+    quantity: s.quantity,
+  }))
+
+  // Legacy fields for older admin readers
+  const requiredSide = sides.find((s) => s.group_id != null) ?? sides[0] ?? null
+  const optionalSides = sides.filter((s) => s.id !== requiredSide?.id)
 
   return {
     item_type: "food",
@@ -24,9 +34,10 @@ function mapCartItemToBackendCartItem(cartItem: CartItem): BackendCartItem {
       side_id: s.id,
       quantity: s.quantity,
     })),
+    selections,
     quantity: cartItem.quantity,
     image_url: cartItem.foodImage,
-    price_at_time: cartItem.foodPrice,
+    price_at_time: unitTotal,
   }
 }
 
@@ -50,6 +61,7 @@ export async function POST(req: Request) {
     delivery_lga?: string | null
     delivery_state?: string | null
     delivery_notes?: string | null
+    order_note?: string | null
     callback_url?: string
     /** Mobile / API key clients: same as your backend docs */
     user_id?: string
@@ -166,10 +178,9 @@ export async function POST(req: Request) {
     delivery_method,
     delivery_address: body.delivery_address?.trim() ?? null,
     location,
-    // Persist backend-expected items array shape.
-    // (Checkout still accepts `delivery_notes`, but the current orders payload expects normalized order items.)
     items: backendCartItems,
     status: "awaiting_payment",
+    order_note: body.order_note?.trim() || body.delivery_notes?.trim() || null,
   })
 
   if (!created) {

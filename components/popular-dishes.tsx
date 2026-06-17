@@ -2,10 +2,12 @@
 
 import { useMemo } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { ShoppingBag, Plus, Minus, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import type { FoodWithCategory } from "@/lib/db/types"
 import { formatPrice } from "@/lib/format"
+import { getMenuPrice } from "@/lib/pricing"
 import { useCart } from "@/lib/cart/cart-context"
 import { useAvailability } from "@/lib/availability/availability-context"
 import { effectiveFoodMenuUiStatus } from "@/lib/availability/status"
@@ -20,6 +22,7 @@ interface PopularDishesProps {
 }
 
 export function PopularDishes({ foods, title = "Popular dishes", subtitle = "Crowd favourites that our customers order again and again." }: PopularDishesProps) {
+  const router = useRouter()
   const { cart, addToCart, updateQuantity, removeFromCart, storeLocation } = useCart()
   const { foods: foodAvailabilityMaps } = useAvailability()
   const { applyBranchAvailability } = useBranchAvailability()
@@ -60,10 +63,14 @@ export function PopularDishes({ foods, title = "Popular dishes", subtitle = "Cro
       "out_of_stock"
     )
       return
+    if (food.has_customization) {
+      router.push(`/menu/${food.id}`)
+      return
+    }
     addToCart({
       foodId: food.id,
       foodName: food.name,
-      foodPrice: food.price,
+      foodPrice: getMenuPrice(food),
       foodImage: food.image_url,
       quantity: 1,
       sides: [],
@@ -161,7 +168,7 @@ export function PopularDishes({ foods, title = "Popular dishes", subtitle = "Cro
                   )}
                   <div className="mt-3 flex items-center justify-between">
                     <span className="text-base sm:text-lg font-semibold text-foreground">
-                      &#8358;{formatPrice(food.price)}
+                      &#8358;{formatPrice(getMenuPrice(food))}
                     </span>
                     {outOfStock ? (
                         <span className="text-xs font-medium text-amber-700 dark:text-amber-400">Unavailable here</span>

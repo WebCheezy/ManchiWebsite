@@ -6,6 +6,7 @@ import Link from "next/link"
 import { Search, X, Loader2 } from "lucide-react"
 import type { FoodWithCategory } from "@/lib/db/types"
 import { formatPrice } from "@/lib/format"
+import { getMenuPrice } from "@/lib/pricing"
 import { useCart } from "@/lib/cart/cart-context"
 import { useAvailability } from "@/lib/availability/availability-context"
 import { effectiveFoodMenuUiStatus } from "@/lib/availability/status"
@@ -215,7 +216,7 @@ export function SearchAutocomplete({
                         )}
                       </div>
                       <span className="text-sm font-semibold text-foreground shrink-0">
-                        ₦{formatPrice(food.price)}
+                        ₦{formatPrice(getMenuPrice(food))}
                       </span>
                     </button>
                   </li>
