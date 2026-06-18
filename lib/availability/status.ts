@@ -8,11 +8,11 @@ export type SerializedSideAvailability = Record<string, Record<string, Availabil
 export type FoodMenuUiStatus = "available" | "out_of_stock" | "hidden"
 
 export function emptySerializedFoodAvailability(): SerializedFoodAvailability {
-  return { Chasemall: {}, Aurora: {}, Eromo: {} }
+  return { Chasemall: {}, Eromo: {} }
 }
 
 export function emptySerializedSideAvailability(): SerializedSideAvailability {
-  return { Chasemall: {}, Aurora: {}, Eromo: {} }
+  return { Chasemall: {}, Eromo: {} }
 }
 
 function statusForFood(

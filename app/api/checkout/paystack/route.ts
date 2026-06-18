@@ -104,7 +104,7 @@ export async function POST(req: Request) {
   }
 
   const location = body.location
-  if (location !== "Chasemall" && location !== "Aurora" && location !== "Eromo") {
+  if (location !== "Chasemall" && location !== "Eromo") {
     return NextResponse.json({ error: "Invalid location." }, { status: 400 })
   }
 

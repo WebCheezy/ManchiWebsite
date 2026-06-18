@@ -130,7 +130,7 @@ export interface OrderItem {
 export type DeliveryMethod = "delivery" | "pickup"
 
 /** Manchi branch / store location for order fulfillment (`orders.location`, availability tables) */
-export type StoreLocation = "Chasemall" | "Aurora" | "Eromo"
+export type StoreLocation = "Chasemall" | "Eromo"
 
 export interface Order {
   id: number

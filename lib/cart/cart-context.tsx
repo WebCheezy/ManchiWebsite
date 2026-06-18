@@ -9,8 +9,8 @@ import {
   useState,
   type ReactNode,
 } from "react"
-import type { Cart, CartItem, CartSideItem } from "@/lib/db/types"
-import type { DeliveryMethod, StoreLocation } from "@/lib/db/types"
+import type { Cart, CartItem, CartSideItem, DeliveryMethod, StoreLocation } from "@/lib/db/types"
+import { normalizeStoreLocation } from "@/lib/location/branch"
 import { calculateCartItemTotal } from "@/lib/pricing"
 
 /** Exported so checkout success can clear storage in sync with context (avoids load-after-clear races). */
@@ -193,8 +193,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     try {
       const stored = localStorage.getItem(STORE_LOCATION_STORAGE_KEY)
-      if (stored === "Chasemall" || stored === "Aurora" || stored === "Eromo") {
-        setStoreLocationState(stored)
+      if (stored) {
+        setStoreLocationState(normalizeStoreLocation(stored))
       }
     } catch (e) {
       console.error("[CartProvider] Failed to load store location from storage:", e)

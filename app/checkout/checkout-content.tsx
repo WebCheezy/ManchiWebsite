@@ -30,7 +30,7 @@ import {
   CHECKOUT_PUBLIC_PHONE_TEL,
 } from "@/lib/checkout/public-contact"
 import { isServedRegion, servedRegionErrorMessage } from "@/lib/delivery/served-regions"
-import { getBranchDisplayInfo, resolveStoreLocationFromAddress } from "@/lib/location/branch"
+import { getBranchDisplayInfo, resolveStoreLocationFromAddress, STORE_LOCATIONS } from "@/lib/location/branch"
 
 const PLACEHOLDER_IMAGE = "https://images.unsplash.com/photo-1604329760661-e71dc83f8f26?w=100&h=100&fit=crop&q=80"
 const VAT_RATE = 0.075
@@ -186,9 +186,9 @@ export function CheckoutContent({
             <RadioGroup
               value={storeLocation}
               onValueChange={(v) => setStoreLocation(v as StoreLocation)}
-              className="grid grid-cols-1 sm:grid-cols-3 gap-3"
+              className="grid grid-cols-1 sm:grid-cols-2 gap-3"
             >
-              {(["Chasemall", "Aurora", "Eromo"] as const).map((loc) => {
+              {STORE_LOCATIONS.map((loc) => {
                 const info = getBranchDisplayInfo(loc)
                 return (
                   <label
