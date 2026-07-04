@@ -1,9 +1,5 @@
-import { getServerClient } from "./server"
-import {
-  effectiveMenuPrice,
-  fetchPublicOptionGroupsForFood,
-  foodIdsWithOptionGroups,
-} from "./pricing.server"
+import { unstable_noStore as noStore } from "next/cache"
+import { getBackendFoodById, getMenuSnapshot } from "./menu-backend.server"
 import type { FoodWithCategory } from "./types"
 
 export interface GetFoodsOptions {
@@ -12,78 +8,48 @@ export interface GetFoodsOptions {
   includeUnavailable?: boolean
 }
 
-function enrichFoodList(
-  foods: FoodWithCategory[],
-  customizationIds: Set<number>
-): FoodWithCategory[] {
-  return foods.map((food) => ({
-    ...food,
-    base_price: food.price,
-    menu_price: food.display_price ?? food.price,
-    has_customization: customizationIds.has(food.id),
-  }))
+async function enrichFoodList(foods: FoodWithCategory[]): Promise<FoodWithCategory[]> {
+  return foods
 }
 
 export async function getFoods(options: GetFoodsOptions = {}): Promise<FoodWithCategory[]> {
-  const { categoryId, search, includeUnavailable = false } = options
-  const supabase = await getServerClient()
+  noStore()
 
-  let query = supabase
-    .from("foods")
-    .select("*, category:categories(id, name)")
-    .order("created_at", { ascending: false })
+  const { categoryId, search, includeUnavailable = false } = options
+  const snapshot = await getMenuSnapshot()
+
+  let foods = [...snapshot.foods]
 
   if (!includeUnavailable) {
-    query = query.eq("is_available", true)
+    foods = foods.filter((food) => food.is_available)
   }
 
   if (categoryId != null) {
-    query = query.eq("category_id", categoryId)
+    foods = foods.filter((food) => food.category_id === categoryId)
   }
 
   if (search && search.trim()) {
-    query = query.ilike("name", `%${search.trim()}%`)
+    const query = search.trim().toLowerCase()
+    foods = foods.filter(
+      (food) =>
+        food.name.toLowerCase().includes(query) ||
+        food.description?.toLowerCase().includes(query) ||
+        food.category?.name.toLowerCase().includes(query)
+    )
   }
 
-  const { data, error } = await query
-
-  if (error) {
-    console.error("[getFoods]", error.message)
-    return []
-  }
-
-  const foods = (data ?? []) as FoodWithCategory[]
-  const customizationIds = await foodIdsWithOptionGroups(foods.map((f) => f.id))
-  return enrichFoodList(foods, customizationIds)
+  return enrichFoodList(foods)
 }
 
 export async function getFoodById(id: number): Promise<FoodWithCategory | null> {
-  const supabase = await getServerClient()
-  const { data, error } = await supabase
-    .from("foods")
-    .select("*, category:categories(id, name)")
-    .eq("id", id)
-    .single()
-
-  if (error || !data) return null
-  return data as FoodWithCategory
+  noStore()
+  return getBackendFoodById(id)
 }
 
 /** Food with enriched option groups and computed menu_price (detail page). */
 export async function getFoodWithPricing(id: number): Promise<FoodWithCategory | null> {
-  const food = await getFoodById(id)
-  if (!food) return null
-
-  const option_groups = await fetchPublicOptionGroupsForFood(food.id)
-  const menu_price = effectiveMenuPrice(food, option_groups)
-
-  return {
-    ...food,
-    base_price: food.price,
-    menu_price,
-    has_customization: option_groups.length > 0,
-    option_groups,
-  }
+  noStore()
+  return getBackendFoodById(id)
 }
 
 export async function searchFoods(query: string): Promise<FoodWithCategory[]> {

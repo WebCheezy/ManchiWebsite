@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { useCart } from "@/lib/cart"
 import { formatPrice } from "@/lib/format"
+import { formatOptionPriceLabel } from "@/lib/pricing"
 import type { CartItem } from "@/lib/db/types"
 
 const PLACEHOLDER_IMAGE = "https://images.unsplash.com/photo-1604329760661-e71dc83f8f26?w=200&h=200&fit=crop&q=80"
@@ -307,9 +308,11 @@ function CartItemCard({ item, onUpdateQuantity, onRemove, getItemTotal }: CartIt
             {item.sides.map((side) => {
               const delta = side.price_delta
               const extra =
-                delta !== undefined && delta > 0
-                  ? ` (+ ₦${formatPrice(delta * side.quantity)})`
-                  : delta === undefined && side.price > 0
+                delta !== undefined
+                  ? side.quantity > 1 && delta !== 0
+                    ? ` (${delta > 0 ? "+" : "-"} ₦${formatPrice(Math.abs(delta * side.quantity))})`
+                    : ` (${formatOptionPriceLabel(delta)})`
+                  : side.price > 0
                     ? ` (+ ₦${formatPrice(side.price * side.quantity)})`
                     : ""
               return (

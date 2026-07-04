@@ -14,7 +14,7 @@ type RawOptionGroup = {
   default_side_id: number | null
 }
 
-/** Which side is bundled in menu price for a group (admin default, else cheapest). */
+/** Which side is bundled in menu price for a group. `null` means include nothing. */
 export function resolvePricingDefaultSideId(group: {
   default_side_id: number | null
   sides: Pick<OptionGroupSide, "id" | "price">[]
@@ -23,8 +23,7 @@ export function resolvePricingDefaultSideId(group: {
     const exists = group.sides.some((s) => s.id === group.default_side_id)
     if (exists) return group.default_side_id
   }
-  if (group.sides.length === 0) return null
-  return group.sides.reduce((min, s) => (s.price < min.price ? s : min)).id
+  return null
 }
 
 export function enrichOptionGroupsWithPricing(
@@ -55,7 +54,7 @@ export function enrichOptionGroupsWithPricing(
       ...side,
       price_delta:
         pricingDefaultSideId != null
-          ? Math.max(0, side.price - defaultPrice)
+          ? side.price - defaultPrice
           : side.price,
       is_pricing_default: side.id === pricingDefaultSideId,
     }))

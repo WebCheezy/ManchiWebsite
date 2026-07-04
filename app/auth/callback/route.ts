@@ -12,9 +12,9 @@ export async function GET(request: Request) {
     const { error } = await supabase.auth.exchangeCodeForSession(code)
 
     if (!error) {
-      // If this is a password recovery, redirect to reset password page
+      // Password recovery now starts from the OTP-based forgot password flow.
       if (type === "recovery") {
-        return NextResponse.redirect(new URL("/reset-password", requestUrl.origin))
+        return NextResponse.redirect(new URL("/forgot-password", requestUrl.origin))
       }
 
       // Otherwise redirect to the next URL or home

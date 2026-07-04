@@ -17,6 +17,7 @@ import { calculateCartItemTotal } from "@/lib/pricing"
 export const CART_STORAGE_KEY = "manchi-cart"
 const DELIVERY_METHOD_STORAGE_KEY = "manchi-delivery-method"
 const STORE_LOCATION_STORAGE_KEY = "manchi-store-location"
+const STORE_LOCATION_COOKIE_KEY = "manchi-store-location"
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 interface AddToCartPayload {
@@ -223,6 +224,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     try {
       localStorage.setItem(STORE_LOCATION_STORAGE_KEY, storeLocation)
+      document.cookie = `${STORE_LOCATION_COOKIE_KEY}=${encodeURIComponent(storeLocation)}; path=/; max-age=31536000; samesite=lax`
     } catch (e) {
       console.error("[CartProvider] Failed to save store location to storage:", e)
     }

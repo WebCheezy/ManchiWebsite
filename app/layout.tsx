@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next'
 import { Montserrat } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { ThemeProvider } from '@/components/theme-provider'
+import { Toaster } from '@/components/ui/sonner'
 import { CartProvider } from '@/lib/cart'
 import { AvailabilityProvider } from '@/lib/availability/availability-context'
 import { BranchAvailabilityProvider } from '@/lib/browse/branch-availability-context'
@@ -56,6 +57,7 @@ export default async function RootLayout({
               <BranchAvailabilityProvider>{children}</BranchAvailabilityProvider>
             </CartProvider>
           </AvailabilityProvider>
+          <Toaster richColors position="top-center" />
           <Analytics />
         </ThemeProvider>
       </body>

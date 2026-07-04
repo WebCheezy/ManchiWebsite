@@ -9,7 +9,9 @@ export function getMenuPrice(food: Pick<FoodWithCategory, "price" | "display_pri
 }
 
 export function formatOptionPriceLabel(priceDelta: number): string {
-  return `+ ₦${formatPrice(priceDelta)}`
+  if (priceDelta === 0) return "Included"
+  if (priceDelta > 0) return `+ ₦${formatPrice(priceDelta)}`
+  return `- ₦${formatPrice(Math.abs(priceDelta))}`
 }
 
 export function calculateSelectionDeltasTotal(

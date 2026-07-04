@@ -1,38 +1,72 @@
 "use client"
 
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { Mail, Loader2, CheckCircle, ArrowLeft } from "lucide-react"
+import Image from "next/image"
+import { ArrowLeft, ArrowRight, Mail } from "lucide-react"
+import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { createClient } from "@/lib/db/client"
+import { Spinner } from "@/components/ui/spinner"
+
+const FORGOT_PASSWORD_SUCCESS_MESSAGE =
+  "If an account exists for that email, a reset code has been sent."
+
+function ManchiLogo() {
+  return (
+    <Link href="/" className="inline-block focus:outline-none focus:ring-2 focus:ring-primary rounded">
+      <Image
+        src="/logos/manchi-primary.png"
+        alt="Manchi"
+        width={140}
+        height={44}
+        className="h-9 w-auto dark:hidden"
+      />
+      <Image
+        src="/logos/manchi-primary-dark-mode.png"
+        alt="Manchi"
+        width={140}
+        height={44}
+        className="hidden h-9 w-auto dark:block"
+      />
+    </Link>
+  )
+}
 
 export default function ForgotPasswordPage() {
+  const router = useRouter()
   const [email, setEmail] = useState("")
   const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setError(null)
+
+    const trimmedEmail = email.trim()
+    if (!trimmedEmail) {
+      toast.error("Enter your email address to continue.")
+      return
+    }
+
     setIsLoading(true)
 
     try {
-      const supabase = createClient()
-      const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/auth/callback?type=recovery`,
+      const response = await fetch("/api/auth/forgot-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: trimmedEmail }),
       })
 
-      if (resetError) {
-        setError(resetError.message)
-        return
+      if (!response.ok) {
+        throw new Error("Forgot password request failed")
       }
 
       setSuccess(true)
+      toast.success(FORGOT_PASSWORD_SUCCESS_MESSAGE)
     } catch {
-      setError("An unexpected error occurred. Please try again.")
+      toast.error("We couldn't process your request right now. Please try again.")
     } finally {
       setIsLoading(false)
     }
@@ -42,27 +76,28 @@ export default function ForgotPasswordPage() {
     return (
       <div className="min-h-screen flex flex-col bg-background">
         <div className="flex-1 flex items-center justify-center px-4 py-12">
-          <div className="w-full max-w-md text-center space-y-6">
-            <div className="flex justify-center">
-              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
-                <CheckCircle className="h-8 w-8 text-primary" />
-              </div>
-            </div>
+          <div className="w-full max-w-md space-y-6 text-center">
             <div>
-              <h1 className="text-2xl font-bold text-foreground">Check your email</h1>
-              <p className="mt-2 text-muted-foreground">
-                We&apos;ve sent a password reset link to <strong>{email}</strong>. 
-                Click the link to reset your password.
-              </p>
+              <ManchiLogo />
+              <h1 className="mt-8 text-2xl font-bold text-foreground">Check your email</h1>
+              <p className="mt-2 text-sm text-muted-foreground">{FORGOT_PASSWORD_SUCCESS_MESSAGE}</p>
             </div>
-            <div className="pt-4">
-              <Link href="/login">
-                <Button variant="outline" className="w-full">
-                  <ArrowLeft className="mr-2 h-4 w-4" />
-                  Back to Sign in
-                </Button>
-              </Link>
-            </div>
+            <Button
+              type="button"
+              className="w-full"
+              size="lg"
+              onClick={() => router.push(`/reset-password?email=${encodeURIComponent(email.trim())}`)}
+            >
+              Continue
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
+            <Link
+              href="/login"
+              className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back to Sign in
+            </Link>
           </div>
         </div>
       </div>
@@ -73,32 +108,23 @@ export default function ForgotPasswordPage() {
     <div className="min-h-screen flex flex-col bg-background">
       <div className="flex-1 flex items-center justify-center px-4 py-12">
         <div className="w-full max-w-md space-y-8">
-          {/* Logo */}
           <div className="text-center">
-            <Link href="/" className="inline-block">
-              <span className="text-3xl font-extrabold text-primary tracking-tight">Manchi</span>
-            </Link>
-            <h1 className="mt-6 text-2xl font-bold text-foreground">Forgot your password?</h1>
+            <ManchiLogo />
+            <h1 className="mt-8 text-2xl font-bold text-foreground">Forgot your password?</h1>
             <p className="mt-2 text-sm text-muted-foreground">
-              Enter your email and we&apos;ll send you a reset link
+              Enter your email address to receive a 6-digit reset code.
             </p>
           </div>
 
-          {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-6">
-            {error && (
-              <div className="rounded-lg bg-destructive/10 px-4 py-3 text-sm text-destructive">
-                {error}
-              </div>
-            )}
-
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">Email address</Label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   id="email"
                   type="email"
+                  autoComplete="email"
                   placeholder="you@example.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
@@ -109,19 +135,21 @@ export default function ForgotPasswordPage() {
               </div>
             </div>
 
-            <Button type="submit" className="w-full" disabled={isLoading}>
+            <Button type="submit" className="w-full" size="lg" disabled={isLoading}>
               {isLoading ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Sending reset link...
+                  <Spinner className="mr-2" />
+                  Sending code...
                 </>
               ) : (
-                "Send reset link"
+                <>
+                  Send reset code
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </>
               )}
             </Button>
           </form>
 
-          {/* Back to login */}
           <div className="text-center">
             <Link
               href="/login"

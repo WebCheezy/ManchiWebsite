@@ -12,6 +12,7 @@ import {
   buildDefaultSelections,
   calculateSelectionDeltasTotal,
   calculateUnitTotal,
+  formatOptionPriceLabel,
   isGroupSelectionValid,
   selectionsToCartSides,
 } from "@/lib/pricing"
@@ -126,18 +127,24 @@ export function FoodDetailClient({ food }: FoodDetailClientProps) {
         </div>
       </div>
 
-      {(hasOptions || deltasTotal > 0) && deltasTotal > 0 && (
+      {hasOptions && cartSides.length > 0 && (
         <div className="rounded-xl bg-muted/50 p-4 space-y-2 text-sm">
-          {cartSides
-            .filter((side) => (side.price_delta ?? 0) > 0)
-            .map((side) => (
+          {cartSides.map((side) => {
+            const delta = side.price_delta ?? 0
+            const label =
+              side.quantity > 1 && delta !== 0
+                ? `${delta > 0 ? "+ " : "- "}₦${formatPrice(Math.abs(delta * side.quantity))}`
+                : formatOptionPriceLabel(delta)
+
+            return (
               <div key={`${side.group_id}-${side.id}`} className="flex justify-between text-muted-foreground">
                 <span>
                   {side.name} {side.quantity > 1 && `× ${side.quantity}`}
                 </span>
-                <span>+ ₦{formatPrice((side.price_delta ?? 0) * side.quantity)}</span>
+                <span>{label}</span>
               </div>
-            ))}
+            )
+          })}
         </div>
       )}
 
