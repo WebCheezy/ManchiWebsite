@@ -9,7 +9,7 @@ export function getMenuPrice(food: Pick<FoodWithCategory, "price" | "display_pri
 }
 
 export function formatOptionPriceLabel(priceDelta: number): string {
-  if (priceDelta === 0) return "Included"
+  if (priceDelta === 0) return "+0"
   if (priceDelta > 0) return `+ ₦${formatPrice(priceDelta)}`
   return `- ₦${formatPrice(Math.abs(priceDelta))}`
 }
@@ -79,9 +79,7 @@ export function buildDefaultSelections(optionGroups: OptionGroup[]): Map<number,
   for (const group of optionGroups) {
     const defaultSide = group.sides.find((s) => s.is_pricing_default)
     if (!defaultSide) continue
-    if (group.max_selections === 1 || group.is_required) {
-      map.set(group.id, new Map([[defaultSide.id, 1]]))
-    }
+    map.set(group.id, new Map([[defaultSide.id, 1]]))
   }
   return map
 }

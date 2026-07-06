@@ -97,10 +97,17 @@ export default async function FoodDetailPage({ params }: FoodDetailPageProps) {
               {food.description || "Delicious meal prepared with fresh ingredients and authentic Nigerian spices."}
             </p>
 
-            <div className="mt-6 flex items-center gap-4">
-              <span className="text-3xl font-bold text-foreground">
-                &#8358;{formatPrice(menuPrice)}
-              </span>
+            <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
+              <div>
+                <span className="text-3xl font-bold text-foreground">
+                  From &#8358;{formatPrice(menuPrice)}
+                </span>
+                {food.option_groups && food.option_groups.length > 0 && (
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Final price updates when you add extra options.
+                  </p>
+                )}
+              </div>
               <div className="flex items-center gap-1.5 text-muted-foreground">
                 <Clock className="h-4 w-4" />
                 <span className="text-sm">30-45 min delivery</span>

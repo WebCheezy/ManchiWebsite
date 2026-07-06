@@ -5,7 +5,7 @@ import { cookies } from "next/headers"
 import { getUser } from "@/lib/auth.server"
 import { resolveStoreLocationFromAddress, normalizeStoreLocation } from "@/lib/location/branch"
 import { getServerClient } from "./server"
-import { effectiveMenuPrice, fetchPublicOptionGroupsForFood } from "./pricing.server"
+import { effectiveMenuPrice, enrichOptionGroupsWithPricing } from "./pricing.server"
 import { getAddresses } from "./addresses.server"
 import type {
   Address,
@@ -14,12 +14,36 @@ import type {
   FoodWithCategory,
   OptionGroup,
   OptionGroupSide,
+  Side,
   StoreLocation,
 } from "./types"
 
 type MenuSnapshot = {
   categories: Category[]
   foods: FoodWithCategory[]
+}
+
+type RawOptionGroupRow = {
+  id: number
+  food_id: number
+  name: string
+  min_selections: number
+  max_selections: number
+  is_required: boolean
+  display_order: number
+  default_side_id: number | null
+}
+
+type FoodAvailabilityRow = {
+  food_id: number | null
+  location: string
+  status: AvailabilityStatus | null
+}
+
+type LegacyFoodSideRow = {
+  food_id: number
+  is_required: boolean
+  side: Side | null
 }
 
 const STORE_LOCATION_COOKIE = "manchi-store-location"
@@ -217,12 +241,88 @@ function normalizeMenuSnapshot(payload: unknown): MenuSnapshot {
   return { categories, foods }
 }
 
-async function getLocalMenuSnapshot(): Promise<MenuSnapshot> {
+function buildLegacyGroupsFromFoodSides(foodId: number, sidesForFood: Array<Side & { is_required: boolean }>) {
+  if (sidesForFood.length === 0) return []
+
+  const withGroupId = sidesForFood.filter((s) => s.option_group_id != null)
+  if (withGroupId.length > 0) {
+    const byGroup = new Map<number, typeof sidesForFood>()
+    for (const side of withGroupId) {
+      const groupId = side.option_group_id!
+      if (!byGroup.has(groupId)) byGroup.set(groupId, [])
+      byGroup.get(groupId)!.push(side)
+    }
+
+    return Array.from(byGroup.entries()).map(([groupId, sides], index) => ({
+      id: groupId,
+      food_id: foodId,
+      name: "Options",
+      min_selections: sides.some((side) => side.is_required) ? 1 : 0,
+      max_selections: 1,
+      is_required: sides.some((side) => side.is_required),
+      display_order: index,
+      default_side_id: null,
+      sides: sides as Side[],
+    }))
+  }
+
+  const required = sidesForFood.filter((side) => side.is_required)
+  const optional = sidesForFood.filter((side) => !side.is_required)
+  const result: Array<RawOptionGroupRow & { sides: Side[] }> = []
+
+  if (required.length > 0) {
+    result.push({
+      id: -1,
+      food_id: foodId,
+      name: "Choose your side",
+      min_selections: 1,
+      max_selections: 1,
+      is_required: true,
+      display_order: 0,
+      default_side_id: null,
+      sides: required as Side[],
+    })
+  }
+
+  if (optional.length > 0) {
+    result.push({
+      id: -2,
+      food_id: foodId,
+      name: "Add extras",
+      min_selections: 0,
+      max_selections: optional.length,
+      is_required: false,
+      display_order: 1,
+      default_side_id: null,
+      sides: optional as Side[],
+    })
+  }
+
+  return result
+}
+
+function mapFoodAvailabilityForLocation(rows: FoodAvailabilityRow[] | null | undefined, location: StoreLocation) {
+  const availability = new Map<number, AvailabilityStatus>()
+
+  for (const row of rows ?? []) {
+    if (row.food_id == null || row.location !== location) continue
+    availability.set(row.food_id, normalizeStatus(row.status))
+  }
+
+  return availability
+}
+
+async function getLocalMenuSnapshot(location: StoreLocation): Promise<MenuSnapshot> {
   const supabase = await getServerClient()
 
-  const [{ data: categoryRows, error: categoryError }, { data: foodRows, error: foodError }] = await Promise.all([
+  const [
+    { data: categoryRows, error: categoryError },
+    { data: foodRows, error: foodError },
+    { data: foodAvailabilityRows, error: foodAvailabilityError },
+  ] = await Promise.all([
     supabase.from("categories").select("id, name, image_url, created_at").order("name"),
     supabase.from("foods").select("*, category:categories(id, name)").order("created_at", { ascending: false }),
+    supabase.from("food_availability").select("food_id, location, status").eq("location", location),
   ])
 
   if (categoryError) {
@@ -233,19 +333,104 @@ async function getLocalMenuSnapshot(): Promise<MenuSnapshot> {
     console.error("[menu-backend] Local food fallback failed:", foodError.message)
   }
 
+  if (foodAvailabilityError) {
+    console.error("[menu-backend] Local food availability fallback failed:", foodAvailabilityError.message)
+  }
+
   const categories = ((categoryRows ?? []) as Category[]).sort((a, b) => a.name.localeCompare(b.name))
-  const foods = await Promise.all(
-    ((foodRows ?? []) as FoodWithCategory[]).map(async (food) => {
-      const optionGroups = await fetchPublicOptionGroupsForFood(food.id)
+  const rawFoods = (foodRows ?? []) as FoodWithCategory[]
+  const foodIds = rawFoods.map((food) => food.id)
+  const foodAvailabilityById = mapFoodAvailabilityForLocation(
+    (foodAvailabilityRows ?? []) as FoodAvailabilityRow[],
+    location
+  )
+
+  const { data: optionGroupRows, error: optionGroupError } = foodIds.length
+    ? await supabase
+        .from("option_groups")
+        .select("id, food_id, name, min_selections, max_selections, is_required, display_order, default_side_id")
+        .in("food_id", foodIds)
+        .order("display_order", { ascending: true })
+    : { data: [], error: null }
+
+  if (optionGroupError) {
+    console.error("[menu-backend] Local option group fallback failed:", optionGroupError.message)
+  }
+
+  const rawOptionGroups = (optionGroupRows ?? []) as RawOptionGroupRow[]
+  const optionGroupIds = rawOptionGroups.map((group) => group.id)
+
+  const { data: optionSideRows, error: optionSideError } = optionGroupIds.length
+    ? await supabase.from("sides").select("*").in("option_group_id", optionGroupIds)
+    : { data: [], error: null }
+
+  if (optionSideError) {
+    console.error("[menu-backend] Local option side fallback failed:", optionSideError.message)
+  }
+
+  const groupedSides = new Map<number, Side[]>()
+  for (const side of (optionSideRows ?? []) as Side[]) {
+    if (side.option_group_id == null) continue
+    if (!groupedSides.has(side.option_group_id)) groupedSides.set(side.option_group_id, [])
+    groupedSides.get(side.option_group_id)!.push(side)
+  }
+
+  const optionGroupsByFood = new Map<number, OptionGroup[]>()
+  for (const group of enrichOptionGroupsWithPricing(
+    rawOptionGroups.map((group) => ({
+      ...group,
+      sides: groupedSides.get(group.id) ?? [],
+    }))
+  )) {
+    const foodId = rawOptionGroups.find((row) => row.id === group.id)?.food_id
+    if (foodId == null) continue
+    if (!optionGroupsByFood.has(foodId)) optionGroupsByFood.set(foodId, [])
+    optionGroupsByFood.get(foodId)!.push(group)
+  }
+
+  const foodsMissingGroups = foodIds.filter((foodId) => !(optionGroupsByFood.get(foodId)?.length))
+  if (foodsMissingGroups.length > 0) {
+    const { data: legacyFoodSideRows, error: legacyFoodSidesError } = await supabase
+      .from("food_sides")
+      .select("food_id, is_required, side:sides(*)")
+      .in("food_id", foodsMissingGroups)
+
+    if (legacyFoodSidesError) {
+      console.error("[menu-backend] Local legacy side fallback failed:", legacyFoodSidesError.message)
+    } else {
+      const legacySidesByFood = new Map<number, Array<Side & { is_required: boolean }>>()
+      for (const row of (legacyFoodSideRows ?? []) as unknown as LegacyFoodSideRow[]) {
+        if (!row.side) continue
+        if (!legacySidesByFood.has(row.food_id)) legacySidesByFood.set(row.food_id, [])
+        legacySidesByFood.get(row.food_id)!.push({ ...row.side, is_required: row.is_required })
+      }
+
+      for (const foodId of foodsMissingGroups) {
+        const legacyGroups = buildLegacyGroupsFromFoodSides(foodId, legacySidesByFood.get(foodId) ?? [])
+        if (legacyGroups.length === 0) continue
+        optionGroupsByFood.set(foodId, enrichOptionGroupsWithPricing(legacyGroups))
+      }
+    }
+  }
+
+  const foods = rawFoods
+    .map((food) => {
+      const optionGroups = optionGroupsByFood.get(food.id) ?? []
+      const branchStatus = foodAvailabilityById.get(food.id)
+      const isAvailable =
+        food.is_available !== false &&
+        branchStatus !== "unavailable"
+
       return {
         ...food,
+        is_available: isAvailable,
         base_price: food.price,
         menu_price: effectiveMenuPrice(food, optionGroups),
         has_customization: optionGroups.length > 0,
         option_groups: optionGroups,
       }
     })
-  )
+    .filter((food) => food.is_available || foodAvailabilityById.get(food.id) === "out_of_stock")
 
   return { categories, foods }
 }
@@ -282,7 +467,7 @@ const fetchMenuSnapshotByLocation = cache(async (location: StoreLocation): Promi
 
     if (!response.ok) {
       console.warn(`[menu-backend] Backend menu fetch failed for ${location} with ${response.status}. Using local fallback.`)
-      return getLocalMenuSnapshot()
+      return getLocalMenuSnapshot(location)
     }
 
     const payload = await response.json()
@@ -292,7 +477,7 @@ const fetchMenuSnapshotByLocation = cache(async (location: StoreLocation): Promi
       `[menu-backend] Backend menu fetch errored for ${location}. Using local fallback.`,
       error
     )
-    return getLocalMenuSnapshot()
+    return getLocalMenuSnapshot(location)
   }
 })
 
@@ -330,8 +515,10 @@ export async function getBackendFoodById(id: number): Promise<FoodWithCategory |
 
       const food = normalizeFood(rawFood)
       if (food) return food
-    } else {
+    } else if (response.status >= 500) {
       console.warn(`[menu-backend] Backend food fetch failed for id=${id} with ${response.status}. Using fallback.`)
+    } else {
+      return null
     }
   } catch (error) {
     console.warn(`[menu-backend] Backend food fetch errored for id=${id}. Using fallback.`, error)

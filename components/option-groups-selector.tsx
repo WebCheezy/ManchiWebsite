@@ -21,9 +21,7 @@ function buildDefaultSelections(optionGroups: OptionGroup[]): GroupSelections {
   for (const group of optionGroups) {
     const defaultSide = group.sides.find((s) => s.is_pricing_default)
     if (!defaultSide) continue
-    if (group.max_selections === 1 || group.is_required) {
-      map.set(group.id, new Map([[defaultSide.id, 1]]))
-    }
+    map.set(group.id, new Map([[defaultSide.id, 1]]))
   }
   return map
 }
