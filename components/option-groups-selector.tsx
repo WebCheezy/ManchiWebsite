@@ -40,19 +40,6 @@ function isSelectionValid(optionGroups: OptionGroup[], selected: GroupSelections
   return true
 }
 
-function selectionHint(group: OptionGroup): string {
-  if (!group.is_required) {
-    return `UP TO ${group.max_selections}`
-  }
-  if (group.min_selections === group.max_selections) {
-    return group.max_selections === 1 ? "SELECT 1" : `SELECT ${group.max_selections}`
-  }
-  if (group.min_selections > 0) {
-    return `SELECT ${group.min_selections}–${group.max_selections}`
-  }
-  return `UP TO ${group.max_selections}`
-}
-
 export function OptionGroupsSelector({
   optionGroups,
   onSelectionChange,
@@ -139,9 +126,6 @@ export function OptionGroupsSelector({
                   </span>
                 )}
               </div>
-              <p className="text-[11px] text-muted-foreground mt-0.5 tracking-wide">
-                {selectionHint(group)}
-              </p>
             </div>
 
             {!groupValid && (

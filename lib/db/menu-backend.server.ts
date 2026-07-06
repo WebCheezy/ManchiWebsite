@@ -71,6 +71,14 @@ function toStringOrNull(value: unknown): string | null {
   return typeof value === "string" && value.length > 0 ? value : null
 }
 
+function resolvePrice(...values: unknown[]): number {
+  for (const value of values) {
+    const num = Number(value)
+    if (Number.isFinite(num) && num > 0) return num
+  }
+  return 0
+}
+
 function normalizeStatus(value: unknown): AvailabilityStatus {
   const status = typeof value === "string" ? value.toLowerCase() : "available"
   if (status === "out_of_stock" || status === "unavailable" || status === "available") return status
@@ -168,20 +176,25 @@ function normalizeFood(
     : []
 
   const status = normalizeStatus(raw.status ?? raw.availability_status ?? raw.availability)
+  const resolvedPrice = resolvePrice(raw.base_price, raw.price)
+  const resolvedMenuPrice = resolvePrice(raw.menu_price, raw.display_price, raw.base_price, raw.price)
+  const rawDisplayPrice = toNullableNumber(raw.display_price)
+  const resolvedDisplayPrice =
+    rawDisplayPrice ?? (optionGroups.length === 0 && resolvedMenuPrice > 0 ? resolvedMenuPrice : null)
 
   return {
     id,
     category_id: category?.id ?? toNullableNumber(raw.category_id),
     name,
     description: toStringOrNull(raw.description),
-    price: toNumber(raw.base_price ?? raw.price),
-    display_price: toNullableNumber(raw.display_price),
+    price: resolvedPrice,
+    display_price: resolvedDisplayPrice,
     image_url: toStringOrNull(raw.image_url),
     is_available: status !== "unavailable" && raw.is_available !== false,
     created_at: toStringOrNull(raw.created_at) ?? "",
     category,
-    base_price: toNumber(raw.base_price ?? raw.price),
-    menu_price: toNumber(raw.menu_price ?? raw.display_price ?? raw.base_price ?? raw.price),
+    base_price: resolvedPrice,
+    menu_price: resolvedMenuPrice,
     has_customization: optionGroups.length > 0,
     option_groups: optionGroups,
   }
@@ -420,12 +433,16 @@ async function getLocalMenuSnapshot(location: StoreLocation): Promise<MenuSnapsh
       const isAvailable =
         food.is_available !== false &&
         branchStatus !== "unavailable"
+      const resolvedMenuPrice = effectiveMenuPrice(food, optionGroups)
+      const resolvedDisplayPrice =
+        food.display_price ?? (optionGroups.length === 0 && resolvedMenuPrice > 0 ? resolvedMenuPrice : null)
 
       return {
         ...food,
         is_available: isAvailable,
         base_price: food.price,
-        menu_price: effectiveMenuPrice(food, optionGroups),
+        display_price: resolvedDisplayPrice,
+        menu_price: resolvedMenuPrice,
         has_customization: optionGroups.length > 0,
         option_groups: optionGroups,
       }

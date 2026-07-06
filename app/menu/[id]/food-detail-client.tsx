@@ -13,6 +13,7 @@ import {
   calculateSelectionDeltasTotal,
   calculateUnitTotal,
   formatOptionPriceLabel,
+  getMenuPrice,
   isGroupSelectionValid,
   selectionsToCartSides,
 } from "@/lib/pricing"
@@ -26,7 +27,7 @@ interface FoodDetailClientProps {
 
 export function FoodDetailClient({ food }: FoodDetailClientProps) {
   const optionGroups = food.option_groups ?? []
-  const menuPrice = food.menu_price ?? food.display_price ?? food.price
+  const menuPrice = getMenuPrice(food)
 
   const [quantity, setQuantity] = useState(1)
   const [groupSelections, setGroupSelections] = useState<GroupSelections>(() =>
