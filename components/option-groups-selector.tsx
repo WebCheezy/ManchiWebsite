@@ -35,13 +35,15 @@ function isSelectionValid(optionGroups: OptionGroup[], selected: GroupSelections
   for (const group of optionGroups) {
     const count = countSelections(selected.get(group.id))
     if (group.is_required && count < Math.max(1, group.min_selections)) return false
-    if (count < group.min_selections) return false
     if (count > group.max_selections) return false
   }
   return true
 }
 
 function selectionHint(group: OptionGroup): string {
+  if (!group.is_required) {
+    return `UP TO ${group.max_selections}`
+  }
   if (group.min_selections === group.max_selections) {
     return group.max_selections === 1 ? "SELECT 1" : `SELECT ${group.max_selections}`
   }

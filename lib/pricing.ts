@@ -68,7 +68,6 @@ export function isGroupSelectionValid(
       ? Array.from(groupSel.values()).reduce((sum, q) => sum + q, 0)
       : 0
     if (group.is_required && count < Math.max(1, group.min_selections)) return false
-    if (count < group.min_selections) return false
     if (count > group.max_selections) return false
   }
   return true
