@@ -77,14 +77,14 @@ export function MenuCategories({ categories, selectedCategoryId = null, onSelect
                     : "border-border bg-background font-medium text-foreground hover:border-primary/60 hover:bg-card"
                 }`}
               >
-                <div className="h-7 w-7 overflow-hidden rounded-full bg-muted border border-border/60 sm:h-6 sm:w-6">
-                  {/* <img
+              {/*  <div className="h-7 w-7 overflow-hidden rounded-full bg-muted border border-border/60 sm:h-6 sm:w-6">
+                   <img
                     src={cat.image_url || PLACEHOLDER_IMAGE}
                     alt={cat.name}
                     className="h-full w-full object-cover"
                     crossOrigin="anonymous"
-                  /> */}
-                </div>
+                  />
+                </div> */}
                 <span>{cat.name}</span>
               </button>
             ))}
