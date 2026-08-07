@@ -4,7 +4,7 @@ import Link from "next/link"
 import { Utensils } from "lucide-react"
 import type { Category } from "@/lib/db/types"
 
-const PLACEHOLDER_IMAGE = "https://images.unsplash.com/photo-1604329760661-e71dc83f8f26?w=120&h=120&fit=crop&q=80"
+/*const PLACEHOLDER_IMAGE = "https://images.unsplash.com/photo-1604329760661-e71dc83f8f26?w=120&h=120&fit=crop&q=80"*/
 
 interface MenuCategoriesProps {
   categories: Category[]
